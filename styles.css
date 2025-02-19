@@ -1,0 +1,188 @@
+.game-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    font-family: 'Microsoft YaHei', sans-serif;
+}
+
+.game-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.game-controls {
+    margin: 15px 0;
+}
+
+.game-controls button,
+.game-controls select {
+    margin: 0 10px;
+    padding: 8px 16px;
+    font-size: 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    background-color: #007bff;
+    color: white;
+    transition: background-color 0.3s;
+}
+
+.game-controls button:hover {
+    background-color: #0056b3;
+}
+
+.game-settings {
+    margin: 15px 0;
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.game-settings label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.game-settings input[type="number"] {
+    width: 60px;
+    padding: 4px;
+}
+
+.game-settings input[type="color"] {
+    width: 40px;
+    height: 30px;
+    padding: 0;
+    border: none;
+    cursor: pointer;
+}
+
+#gameCanvas {
+    display: block;
+    margin: 0 auto;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    background-color: white;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.game-info {
+    margin: 15px 0;
+    font-size: 18px;
+}
+
+.game-info span {
+    margin: 0 15px;
+}
+
+.message {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 20px 40px;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    border-radius: 8px;
+    font-size: 24px;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.message.show {
+    opacity: 1;
+}
+
+.message.hidden {
+    display: none;
+}
+
+.tutorial {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 4px;
+    font-size: 16px;
+    z-index: 1000;
+    text-align: center;
+    max-width: 90%;
+}
+
+@media (max-width: 768px) {
+    .game-container {
+        padding: 10px;
+    }
+
+    .game-controls button,
+    .game-controls select {
+        margin: 5px;
+        padding: 12px 24px;
+        font-size: 18px;
+    }
+
+    .game-settings {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .game-settings label {
+        margin: 5px 0;
+    }
+
+    #gameCanvas {
+        touch-action: none;
+        max-width: 100%;
+        height: auto;
+    }
+
+    .message {
+        font-size: 18px;
+        padding: 15px 30px;
+    }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.message.show {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+#imageUpload {
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+@media (max-width: 768px) {
+    .game-container {
+        padding: 10px;
+    }
+    
+    .game-controls button,
+    .game-controls select {
+        margin: 5px;
+        padding: 6px 12px;
+        font-size: 14px;
+    }
+    
+    .game-settings {
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    #gameCanvas {
+        width: 100%;
+        height: auto;
+    }
+}

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>点点成线游戏</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="game-container">
+        <div class="game-header">
+            <h1>点点成线游戏</h1>
+            <div class="game-controls">
+                <select id="gameMode">
+                    <option value="free">自由模式</option>
+                    <option value="time">时间挑战</option>
+                </select>
+                <button id="startGame">开始游戏</button>
+                <button id="resetGame">重置</button>
+            </div>
+            <div class="game-settings">
+                <label>点的数量: <input type="number" id="pointCount" min="6" max="20" value="8"></label>
+                <label>路径颜色: <input type="color" id="pathColor" value="#007bff"></label>
+                <label>画布颜色: <input type="color" id="canvasColor" value="#ffffff"></label>
+                <input type="file" id="imageUpload" accept="image/*">
+            </div>
+            <div class="game-info">
+                <span id="timer" class="hidden">时间: <span id="timeLeft">60</span>秒</span>
+                <span id="score">得分: 0</span>
+            </div>
+        </div>
+        <canvas id="gameCanvas"></canvas>
+        <div id="message" class="message hidden"></div>
+    </div>
+    <script src="game.js"></script>
+</body>
+</html>
