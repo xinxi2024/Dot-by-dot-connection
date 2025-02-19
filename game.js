@@ -4,13 +4,23 @@ class DotGame {
         this.ctx = this.canvas.getContext('2d');
         this.points = [];
         this.path = [];
-        this.obstacles = [];
         this.isPlaying = false;
         this.gameMode = 'free';
         this.timeLeft = 60;
         this.score = 0;
         this.timer = null;
         this.level = 1;
+        this.specialPoints = [];
+        this.animationFrame = null;
+        this.maxPathLength = null;
+        this.requiredOrder = false;
+        this.bonusPoints = [];
+        this.combo = 0;
+        this.lastMoveTime = 0;
+        this.theme = 'standard';
+        this.teleportPoints = [];
+        this.splitPoints = [];
+        this.timePoints = [];
 
         this.initCanvas();
         this.initEventListeners();
@@ -43,20 +53,14 @@ class DotGame {
     generatePoints() {
         const count = parseInt(document.getElementById('pointCount').value);
         this.points = [];
-        this.obstacles = [];
+        this.specialPoints = [];
+        this.bonusPoints = [];
+        this.teleportPoints = [];
+        this.splitPoints = [];
+        this.timePoints = [];
         const margin = this.pointRadius * 2;
 
-        // 生成障碍物
-        const obstacleCount = Math.min(this.level, 5);
-        for (let i = 0; i < obstacleCount; i++) {
-            const width = 40 + Math.random() * 60;
-            const height = 40 + Math.random() * 60;
-            const x = margin + Math.random() * (this.canvas.width - width - 2 * margin);
-            const y = margin + Math.random() * (this.canvas.height - height - 2 * margin);
-            this.obstacles.push({ x, y, width, height });
-        }
-
-        // 生成点位，避开障碍物
+        // 生成基础点位
         for (let i = 0; i < count; i++) {
             let x, y, valid;
             do {
@@ -72,20 +76,62 @@ class DotGame {
                         break;
                     }
                 }
-
-                // 检查是否与障碍物重叠
-                for (const obstacle of this.obstacles) {
-                    if (x >= obstacle.x - this.pointRadius && 
-                        x <= obstacle.x + obstacle.width + this.pointRadius && 
-                        y >= obstacle.y - this.pointRadius && 
-                        y <= obstacle.y + obstacle.height + this.pointRadius) {
-                        valid = false;
-                        break;
-                    }
-                }
             } while (!valid);
 
-            this.points.push({ x, y });
+            this.points.push({ x, y, type: 'normal' });
+        }
+
+        // 根据等级添加特殊点
+        if (this.level >= 2) {
+            // 添加必须按顺序连接的点
+            this.requiredOrder = true;
+            // 设置最大路径长度限制
+            this.maxPathLength = this.points.length * 1.5;
+
+            // 添加传送点（成对出现）
+            if (this.level >= 3) {
+                const teleportCount = Math.min(2, Math.floor(this.level / 3));
+                for (let i = 0; i < teleportCount * 2; i += 2) {
+                    const index1 = Math.floor(Math.random() * this.points.length);
+                    const index2 = Math.floor(Math.random() * this.points.length);
+                    this.teleportPoints.push([index1, index2]);
+                    this.points[index1].type = 'teleport';
+                    this.points[index2].type = 'teleport';
+                }
+            }
+
+            // 添加分裂点
+            if (this.level >= 4) {
+                const splitCount = Math.min(2, Math.floor((this.level - 3) / 2));
+                for (let i = 0; i < splitCount; i++) {
+                    const index = Math.floor(Math.random() * this.points.length);
+                    if (this.points[index].type === 'normal') {
+                        this.points[index].type = 'split';
+                        this.splitPoints.push(index);
+                    }
+                }
+            }
+
+            // 添加限时点
+            if (this.level >= 5) {
+                const timeCount = Math.min(2, Math.floor((this.level - 4) / 2));
+                for (let i = 0; i < timeCount; i++) {
+                    const index = Math.floor(Math.random() * this.points.length);
+                    if (this.points[index].type === 'normal') {
+                        this.points[index].type = 'time';
+                        this.timePoints.push(index);
+                    }
+                }
+            }
+
+            // 添加额外分数点
+            const bonusCount = Math.min(3, Math.floor(this.level / 2));
+            for (let i = 0; i < bonusCount; i++) {
+                const index = Math.floor(Math.random() * this.points.length);
+                if (this.points[index].type === 'normal') {
+                    this.bonusPoints.push(index);
+                }
+            }
         }
     }
 
@@ -96,7 +142,7 @@ class DotGame {
         this.redraw();
 
         if (this.gameMode === 'time') {
-            this.timeLeft = 60;
+            this.timeLeft = Math.max(30, 60 - this.level * 5);
             document.getElementById('timer').classList.remove('hidden');
             this.timer = setInterval(() => {
                 this.timeLeft--;
@@ -112,12 +158,19 @@ class DotGame {
         this.isPlaying = false;
         this.points = [];
         this.path = [];
+        this.specialPoints = [];
         this.score = 0;
+        this.combo = 0;
+        this.lastMoveTime = 0;
         document.getElementById('score').textContent = `得分: ${this.score}`;
         if (this.timer) {
             clearInterval(this.timer);
             this.timer = null;
             document.getElementById('timer').classList.add('hidden');
+        }
+        if (this.animationFrame) {
+            cancelAnimationFrame(this.animationFrame);
+            this.animationFrame = null;
         }
         this.redraw();
     }
@@ -135,7 +188,20 @@ class DotGame {
 
             if (distance <= this.pointRadius) {
                 if (this.isValidMove(i)) {
+                    // 处理连击奖励
+                    const now = Date.now();
+                    if (now - this.lastMoveTime < 1000) {
+                        this.combo++;
+                    } else {
+                        this.combo = 1;
+                    }
+                    this.lastMoveTime = now;
+
                     this.path.push(i);
+
+                    // 处理特殊点效果
+                    this.handleSpecialPoints(i);
+
                     this.redraw();
                     this.checkWin();
                 }
@@ -144,24 +210,122 @@ class DotGame {
         }
     }
 
+    handleSpecialPoints(pointIndex) {
+        const point = this.points[pointIndex];
+
+        // 处理传送点
+        if (point.type === 'teleport') {
+            for (const [index1, index2] of this.teleportPoints) {
+                if (pointIndex === index1) {
+                    this.path.push(index2);
+                    break;
+                } else if (pointIndex === index2) {
+                    this.path.push(index1);
+                    break;
+                }
+            }
+        }
+
+        // 处理分裂点
+        if (point.type === 'split') {
+            this.maxPathLength += 2;
+        }
+
+        // 处理限时点
+        if (point.type === 'time') {
+            this.timeLeft = Math.min(this.timeLeft + 5, 60);
+            document.getElementById('timeLeft').textContent = this.timeLeft;
+        }
+    }
+
     isValidMove(pointIndex) {
         if (this.path.length === 0) return true;
+
+        // 检查是否超过最大路径长度
+        if (this.maxPathLength && this.path.length >= this.maxPathLength) {
+            this.showMessage('已达到最大路径长度限制！');
+            return false;
+        }
+
+        // 检查是否需要按顺序连接
+        if (this.requiredOrder && this.path.length < this.points.length) {
+            if (pointIndex !== this.path.length) {
+                this.showMessage('必须按顺序连接点！');
+                return false;
+            }
+        }
+
+        // 检查是否可以闭合路径
         if (this.path.includes(pointIndex)) {
             if (pointIndex === this.path[0] && this.path.length === this.points.length) {
                 return true;
             }
             return false;
         }
+
+        // 检查线路碰撞
+        if (this.checkLineCollision(pointIndex)) {
+            this.showMessage('线路发生碰撞！游戏结束');
+            this.gameOver('线路碰撞，游戏结束');
+            return false;
+        }
+
         return true;
+    }
+
+    checkLineCollision(newPointIndex) {
+        if (this.path.length < 2) return false;
+
+        const newPoint = this.points[newPointIndex];
+        const lastPoint = this.points[this.path[this.path.length - 1]];
+
+        // 检查新线段与现有线段的碰撞
+        for (let i = 1; i < this.path.length; i++) {
+            const p1 = this.points[this.path[i - 1]];
+            const p2 = this.points[this.path[i]];
+
+            if (this.lineIntersects(
+                lastPoint.x, lastPoint.y,
+                newPoint.x, newPoint.y,
+                p1.x, p1.y,
+                p2.x, p2.y
+            )) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    lineIntersects(x1, y1, x2, y2, x3, y3, x4, y4) {
+        // 线段相交检测算法
+        const denominator = ((x2 - x1) * (y4 - y3)) - ((y2 - y1) * (x4 - x3));
+        if (denominator === 0) return false;
+
+        const ua = (((x4 - x3) * (y1 - y3)) - ((y4 - y3) * (x1 - x3))) / denominator;
+        const ub = (((x2 - x1) * (y1 - y3)) - ((y2 - y1) * (x1 - x3))) / denominator;
+
+        return (ua > 0 && ua < 1) && (ub > 0 && ub < 1);
     }
 
     checkWin() {
         if (this.path.length === this.points.length + 1 && 
             this.path[0] === this.path[this.path.length - 1]) {
+            let bonus = 0;
+            // 计算额外分数点奖励
+            for (const bonusIndex of this.bonusPoints) {
+                if (this.path.includes(bonusIndex)) {
+                    bonus += 50;
+                }
+            }
+
+            // 计算连击奖励
+            const comboBonus = Math.floor(this.combo * 10);
+
             const timeBonus = this.gameMode === 'time' ? Math.max(0, this.timeLeft) : 0;
-            this.score += 100 + timeBonus;
+            this.score += 100 + timeBonus + bonus + comboBonus;
             document.getElementById('score').textContent = `得分: ${this.score}`;
-            this.showMessage('恭喜完成！');
+            this.showMessage(`恭喜完成！获得额外分数：${bonus + comboBonus}（连击：${this.combo}）`);
             this.adjustDifficulty();
         }
     }
@@ -257,15 +421,32 @@ class DotGame {
         this.showMessage(message);
     }
 
+    updateObstacles() {
+        const updateFrame = () => {
+            if (!this.isPlaying) return;
+            
+            for (const obstacle of this.obstacles) {
+                obstacle.x += obstacle.dx;
+                obstacle.y += obstacle.dy;
+                
+                if (obstacle.x <= 0 || obstacle.x + obstacle.width >= this.canvas.width) {
+                    obstacle.dx = -obstacle.dx;
+                }
+                if (obstacle.y <= 0 || obstacle.y + obstacle.height >= this.canvas.height) {
+                    obstacle.dy = -obstacle.dy;
+                }
+            }
+            
+            this.redraw();
+            this.animationFrame = requestAnimationFrame(updateFrame);
+        };
+        
+        updateFrame();
+    }
+
     redraw() {
         this.ctx.fillStyle = this.canvasColor;
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-
-        // 绘制障碍物
-        this.ctx.fillStyle = '#666666';
-        for (const obstacle of this.obstacles) {
-            this.ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
-        }
 
         // 绘制路径
         if (this.path.length > 1) {
@@ -285,9 +466,29 @@ class DotGame {
         // 绘制点
         this.points.forEach((point, index) => {
             this.ctx.beginPath();
-            this.ctx.fillStyle = this.path.includes(index) ? '#28a745' : '#dc3545';
+            
+            // 设置点的颜色
+            if (this.path.includes(index)) {
+                this.ctx.fillStyle = '#28a745';
+            } else if (this.bonusPoints.includes(index)) {
+                this.ctx.fillStyle = '#ffd700'; // 金色表示额外分数点
+            } else if (this.requiredOrder) {
+                this.ctx.fillStyle = index === this.path.length ? '#ff4500' : '#dc3545';
+            } else {
+                this.ctx.fillStyle = '#dc3545';
+            }
+
             this.ctx.arc(point.x, point.y, this.pointRadius, 0, Math.PI * 2);
             this.ctx.fill();
+
+            // 如果需要按顺序连接，显示数字
+            if (this.requiredOrder && !this.path.includes(index)) {
+                this.ctx.fillStyle = 'white';
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                this.ctx.font = '12px Arial';
+                this.ctx.fillText(index + 1, point.x, point.y);
+            }
         });
     }
 }
