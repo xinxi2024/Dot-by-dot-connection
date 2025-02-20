@@ -13,7 +13,6 @@ class DotGame {
         this.specialPoints = [];
         this.animationFrame = null;
         this.maxPathLength = null;
-        this.requiredOrder = false;
         this.bonusPoints = [];
         this.combo = 0;
         this.lastMoveTime = 0;
@@ -48,6 +47,14 @@ class DotGame {
             this.redraw();
         });
         document.getElementById('imageUpload').addEventListener('change', this.handleImageUpload.bind(this));
+        
+        // 添加规则按钮事件监听
+        document.getElementById('rulesButton').addEventListener('click', () => {
+            document.getElementById('rulesModal').classList.remove('hidden');
+        });
+        document.getElementById('closeRules').addEventListener('click', () => {
+            document.getElementById('rulesModal').classList.add('hidden');
+        });
     }
 
     generatePoints() {
@@ -83,8 +90,6 @@ class DotGame {
 
         // 根据等级添加特殊点
         if (this.level >= 2) {
-            // 添加必须按顺序连接的点
-            this.requiredOrder = true;
             // 设置最大路径长度限制
             this.maxPathLength = this.points.length * 1.5;
 
@@ -187,6 +192,15 @@ class DotGame {
             const distance = Math.sqrt((x - point.x) ** 2 + (y - point.y) ** 2);
 
             if (distance <= this.pointRadius) {
+                // 检查是否点击了已选中的点
+                const pathIndex = this.path.indexOf(i);
+                if (pathIndex !== -1 && pathIndex === this.path.length - 1) {
+                    // 如果点击的是路径中的最后一个点，则取消选择
+                    this.path.pop();
+                    this.redraw();
+                    return;
+                }
+
                 if (this.isValidMove(i)) {
                     // 处理连击奖励
                     const now = Date.now();
@@ -245,14 +259,6 @@ class DotGame {
         if (this.maxPathLength && this.path.length >= this.maxPathLength) {
             this.showMessage('已达到最大路径长度限制！');
             return false;
-        }
-
-        // 检查是否需要按顺序连接
-        if (this.requiredOrder && this.path.length < this.points.length) {
-            if (pointIndex !== this.path.length) {
-                this.showMessage('必须按顺序连接点！');
-                return false;
-            }
         }
 
         // 检查是否可以闭合路径

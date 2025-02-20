@@ -14,17 +14,29 @@
     margin: 15px 0;
 }
 
-.game-controls button,
-.game-controls select {
+.game-button {
     margin: 0 10px;
     padding: 8px 16px;
     font-size: 16px;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    background-color: #007bff;
+    background-color: #6c757d;
     color: white;
-    transition: background-color 0.3s;
+    transition: all 0.3s ease;
+}
+
+.game-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.game-button.primary {
+    background-color: #007bff;
+}
+
+.game-button.info {
+    background-color: #17a2b8;
 }
 
 .game-controls button:hover {
@@ -97,6 +109,61 @@
 
 .message.hidden {
     display: none;
+}
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal-content {
+    background-color: white;
+    padding: 30px;
+    border-radius: 8px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.modal-content h2 {
+    margin-top: 0;
+    color: #333;
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 10px;
+}
+
+.rules-content {
+    margin: 20px 0;
+}
+
+.rules-content h3 {
+    color: #007bff;
+    margin: 15px 0 10px;
+}
+
+.rules-content ul {
+    padding-left: 20px;
+    margin: 10px 0;
+}
+
+.rules-content li {
+    margin: 8px 0;
+    line-height: 1.5;
+    color: #555;
 }
 
 .tutorial {

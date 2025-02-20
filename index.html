@@ -11,12 +11,13 @@
         <div class="game-header">
             <h1>点点成线游戏</h1>
             <div class="game-controls">
-                <select id="gameMode">
+                <select id="gameMode" class="game-button">
                     <option value="free">自由模式</option>
                     <option value="time">时间挑战</option>
                 </select>
-                <button id="startGame">开始游戏</button>
-                <button id="resetGame">重置</button>
+                <button id="startGame" class="game-button primary">开始游戏</button>
+                <button id="resetGame" class="game-button">重置</button>
+                <button id="rulesButton" class="game-button info">游戏规则</button>
             </div>
             <div class="game-settings">
                 <label>点的数量: <input type="number" id="pointCount" min="6" max="20" value="8"></label>
@@ -31,6 +32,32 @@
         </div>
         <canvas id="gameCanvas"></canvas>
         <div id="message" class="message hidden"></div>
+        <div id="rulesModal" class="modal hidden">
+            <div class="modal-content">
+                <h2>游戏规则</h2>
+                <div class="rules-content">
+                    <h3>基本规则：</h3>
+                    <ul>
+                        <li>点击点可以连接它们，形成路径</li>
+                        <li>再次点击已选中的点可以取消选择</li>
+                        <li>完成一个闭合的路径即可获胜</li>
+                        <li>路径不能相交</li>
+                    </ul>
+                    <h3>特殊点说明：</h3>
+                    <ul>
+                        <li>金色点：额外分数点</li>
+                        <li>带数字的点：需要按顺序连接</li>
+                        <li>传送点：可以传送到对应的另一个点</li>
+                    </ul>
+                    <h3>游戏模式：</h3>
+                    <ul>
+                        <li>自由模式：无时间限制</li>
+                        <li>时间挑战：在限定时间内完成</li>
+                    </ul>
+                </div>
+                <button id="closeRules" class="game-button">关闭</button>
+            </div>
+        </div>
     </div>
     <script src="game.js"></script>
 </body>
